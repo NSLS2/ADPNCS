@@ -85,6 +85,16 @@ record(bo, "$(P)$(R)Calibrate"){
     field(PINI, "NO")
 }
 
+record(bi, "$(P)$(R)Calibrate_RBV"){
+    field(DESC, "Calibrate Readback")
+    field(DTYP, "asynInt32")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_CALIBRATE")
+    field(ZNAM, "Idle")
+    field(ONAM, "Calibrate")
+    field(VAL, "0")
+    field(SCAN, "I/O Intr")
+}
+
 record(mbbi, "$(P)$(R)CameraMode_RBV"){
     field(DESC, "Camera Mode")
     field(DTYP, "asynInt32")
@@ -102,27 +112,40 @@ record(mbbi, "$(P)$(R)CameraMode_RBV"){
 record(ao, "$(P)$(R)TemperatureSetpoint"){
     field(DESC, "Temperature Setpoint")
     field(DTYP, "asynFloat64")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMPERATURE_SETPOINT")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMP_SETPOINT")
     field(EGU, "C")
     field(VAL, "0")
+    field(PREC, "1")
     field(PINI, "NO")
+}
+
+record(ai, "$(P)$(R)TemperatureSetpoint_RBV"){
+    field(DESC, "Temp Setpoint Readback")
+    field(DTYP, "asynFloat64")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMP_SETPOINT")
+    field(EGU, "C")
+    field(VAL, "0")
+    field(PREC, "1")
+    field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)Temperature_RBV"){
     field(DESC, "Temp Readback")
     field(DTYP, "asynFloat64")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMPERATURE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMP")
     field(EGU, "C")
     field(VAL, "0")
+    field(PREC, "1")
     field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)HeatsinkTemperature_RBV"){
     field(DESC, "Heatsink Temp Readback")
     field(DTYP, "asynFloat64")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_HEATSINK_TEMPERATURE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_HEATSINK_TEMP")
     field(EGU, "C")
     field(VAL, "0")
+    field(PREC, "1")
     field(SCAN, "I/O Intr")
 }
 

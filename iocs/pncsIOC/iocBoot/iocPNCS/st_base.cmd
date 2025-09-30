@@ -18,6 +18,7 @@ epicsEnvSet("NELMT",                    "65536")
 epicsEnvSet("NDTYPE",                   "Int16")  #'Int8' (8bit B/W, Color) | 'Int16' (16bit B/W)
 epicsEnvSet("NDFTVL",                   "SHORT") #'UCHAR' (8bit B/W, Color) | 'SHORT' (16bit B/W)
 epicsEnvSet("CBUFFS",                   "500")
+epicsEnvSet("EPICS_DB_INCLUDE_PATH", "$(ADCORE)/db")
 
 dbLoadDatabase("$(ADPNCS)/iocs/pncsIOC/dbd/pncsApp.dbd")
 pncsApp_registerRecordDeviceDriver(pdbbase)

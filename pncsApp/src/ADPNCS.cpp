@@ -243,11 +243,17 @@ void ADPNCS::acquireStop() {
 asynStatus ADPNCS::writeInt32(asynUser *pasynUser, epicsInt32 value) {
     int function = pasynUser->reason;
     int acquiring;
-    int status = asynSuccess;
+    asynStatus status = asynSuccess;
     static const char *functionName = "writeInt32";
     getIntegerParam(ADAcquire, &acquiring);
 
-    status = setIntegerParam(function, value);
+    // Certain functions can only be performed in off/on states
+    int powerState;
+    getIntegerParam(ADPNCS_PowerState, &powerState);
+
+    int calibrating;
+    getIntegerParam(ADPNCS_Calibrate, &calibrating);
+
     // start/stop acquisition
     if (function == ADAcquire) {
         if (value && !acquiring) {
@@ -266,7 +272,6 @@ asynStatus ADPNCS::writeInt32(asynUser *pasynUser, epicsInt32 value) {
     } else if (function == ADPNCS_Calibrate) {
         if (acquiring == 1) acquireStop();
         if (value == 1) {
-            setIntegerParam(ADPNCS_Calibrate, 0);
             papi->StartCalibration();
         } else {
             papi->StopCalibration();
@@ -280,44 +285,53 @@ asynStatus ADPNCS::writeInt32(asynUser *pasynUser, epicsInt32 value) {
         }
     } else if (function == ADPNCS_VoltageState) {
         if (acquiring == 1) acquireStop();
-        if (value == 1) {
-            papi->VoltageOn();
+        if (powerState == 0) {
+            if (value == 1)
+                papi->VoltageOn();
+            else
+                papi->VoltageOff();
         } else {
-            papi->VoltageOff();
+            ERR_TO_STATUS("Can't toggle voltage while power is ON!");
+            status = asynError;
         }
     } else if (function == ADPNCS_CoolingState) {
         if (acquiring == 1) acquireStop();
-        if (value == 1) {
-            papi->CoolDown();
+        if (powerState == 0) {
+            if (value == 1)
+                papi->CoolDown();
+            else
+                papi->StopCooling();
         } else {
-            papi->StopCooling();
+            ERR_TO_STATUS("Can't toggle cooling while power is ON!");
+            status = asynError;
         }
     } else if (function == ADPNCS_HeatingState) {
         if (acquiring == 1) acquireStop();
-        if (value == 1) {
-            papi->HeatUp();
+        if (powerState == 0) {
+            if (value == 1)
+                papi->HeatUp();
+            else
+                papi->StopHeating();
         } else {
-            papi->StopHeating();
+            ERR_TO_STATUS("Can't toggle heating while power is ON!");
+            status = asynError;
+        }
+    } else if (function == ADImageMode) {
+        if (acquiring == 1) acquireStop();
+
+    } else {
+        if (function < ADPNCS_FIRST_PARAM) {
+            status = ADDriver::writeInt32(pasynUser, value);
         }
     }
-
-    else if (function == ADImageMode)
-        if (acquiring == 1)
-            acquireStop();
-
-        else {
-            if (function < ADPNCS_FIRST_PARAM) {
-                status = ADDriver::writeInt32(pasynUser, value);
-            }
-        }
     callParamCallbacks();
 
     if (status) {
-        ERR_ARGS("status=%d, function=%d, value=%d\n", status, function, value);
-        return asynError;
+        ERR_ARGS("status=%d, function=%d, value=%d", status, function, value);
     } else
         DEBUG_ARGS("function=%d value=%d\n", function, value);
-    return asynSuccess;
+
+    return status;
 }
 
 /*
@@ -336,10 +350,8 @@ asynStatus ADPNCS::writeFloat64(asynUser *pasynUser, epicsFloat64 value) {
     static const char *functionName = "writeFloat64";
     getIntegerParam(ADAcquire, &acquiring);
 
-    status = setDoubleParam(function, value);
-
     if (function == ADAcquireTime) {
-        if (acquiring) acquireStop();
+        if (acquiring == 1) acquireStop();
     } else {
         if (function < ADPNCS_FIRST_PARAM) {
             status = ADDriver::writeFloat64(pasynUser, value);
@@ -348,22 +360,13 @@ asynStatus ADPNCS::writeFloat64(asynUser *pasynUser, epicsFloat64 value) {
     callParamCallbacks();
 
     if (status) {
-        ERR_ARGS("status=%d, function=%d, value=%f\n", status, function, value);
-        return asynError;
+        ERR_ARGS("status=%d, function=%d, value=%d", status, function, value);
     } else
-        DEBUG_ARGS("function=%d value=%f\n", function, value);
+        DEBUG_ARGS("function=%d value=%d\n", function, value);
+
     return status;
 }
 
-/*
- * Function used for reporting ADUVC device and library information to a external
- * log file. The function first prints all libuvc specific information to the file,
- * then continues on to the base ADDriver 'report' function
- *
- * @params[in]: fp      -> pointer to log file
- * @params[in]: details -> number of details to write to the file
- * @return: void
- */
 void ADPNCS::report(FILE *fp, int details) {
     const char *functionName = "report";
     if (details > 0) {
@@ -372,8 +375,8 @@ void ADPNCS::report(FILE *fp, int details) {
 }
 
 void ADPNCS::parseStatus() {
+    const char *functionName = "parseStatus";
     auto status = papi->GetStatus();
-    std::cout << "Current status: " << status << std::endl;
 
     pncs::types::json::JSON hardwareConfig = status.Get<pncs::types::json::JSON>(
         "/parameter_storage_content/hardware_config", pncs::types::json::JSON());
@@ -393,9 +396,9 @@ void ADPNCS::parseStatus() {
     setIntegerParam(ADSizeX, xSize);
     setIntegerParam(ADSizeY, ySize);
 
-    setDoubleParam(ADPNCS_Temperature,
-                   hardwareStatus.Get<double>("/pnbrain/temperature/detector", 0.0));
-    setDoubleParam(ADPNCS_HeatsinkTemperature,
+    setDoubleParam(ADPNCS_TempSetpoint, hardwareStatus.Get<double>("/operating_temperature", 0.0));
+    setDoubleParam(ADPNCS_Temp, hardwareStatus.Get<double>("/pnbrain/temperature/detector", 0.0));
+    setDoubleParam(ADPNCS_HeatsinkTemp,
                    hardwareStatus.Get<double>("/pnbrain/temperature/sink", 0.0));
 
     pncs::types::json::JSON measurementStatus = status.Get<pncs::types::json::JSON>(
@@ -417,28 +420,55 @@ void ADPNCS::parseStatus() {
     bool liveRunningCorrection = measurementStatus.Get<bool>("/live_running_correction", false);
     setIntegerParam(ADPNCS_LiveRunningCorrection, liveRunningCorrection ? 1 : 0);
 
-    pncs::types::json::JSON software_status = status.Get<pncs::types::json::JSON>(
+    pncs::types::json::JSON softwareConfig = status.Get<pncs::types::json::JSON>(
+        "/parameter_storage_content/software_config", pncs::types::json::JSON());
+
+    pncs::types::json::JSON softwareStatus = status.Get<pncs::types::json::JSON>(
         "/parameter_storage_content/software_status", pncs::types::json::JSON());
-    bool daqConnected = software_status.Get<bool>("/daq/connected", false);
-    bool hwConnected = software_status.Get<bool>("/hwc/connected", false);
-    bool pnbrainConnected = software_status.Get<bool>("/pnbrain/connected", false);
+    bool daqConnected = softwareStatus.Get<bool>("/daq/connected", false);
+    bool hwConnected = softwareStatus.Get<bool>("/hwc/connected", false);
+    bool pnbrainConnected = softwareStatus.Get<bool>("/pnbrain/connected", false);
     int connectionStatus = 0;
     if (daqConnected) connectionStatus = connectionStatus + 1;
     if (hwConnected) connectionStatus = connectionStatus + 2;
     if (pnbrainConnected) connectionStatus = connectionStatus + 4;
     setIntegerParam(ADPNCS_ConnectionStatus, connectionStatus);
 
-    pncs::types::json::JSON stateMachineState = software_status.Get<pncs::types::json::JSON>(
+    pncs::types::json::JSON stateMachineState = softwareStatus.Get<pncs::types::json::JSON>(
         "/master/state_machine", pncs::types::json::JSON());
 
     std::string baseState = stateMachineState.Get<std::string>("/state", "Unknown");
     std::string subState = stateMachineState.Get<std::string>("/substate", "Unknown");
     std::string orthoState = stateMachineState.Get<std::string>("/orthogonal_state", "Unknown");
 
-    if (baseState == "ready")
+    if (baseState == "ready" || baseState == "cold") {
         setIntegerParam(ADPNCS_PowerState, 1);
-    else
+        if (orthoState == "busy") {
+            setIntegerParam(ADStatus, ADStatusWaiting);
+        } else if (subState == "operating") {
+            setIntegerParam(ADStatus, ADStatusIdle);
+        } else if (subState == "live_view") {
+            setIntegerParam(ADStatus, ADStatusAcquire);
+        }
+
+        if (subState == "calibrating") {
+            setIntegerParam(ADPNCS_Calibrate, 1);
+            if (orthoState == "all_ok") {
+                INFO_TO_STATUS("Calibration complete");
+                this->papi->StopCalibration();
+            } else {
+                INFO_TO_STATUS("Waiting for beam blank");
+            }
+        } else {
+            setIntegerParam(ADPNCS_Calibrate, 0);
+        }
+    } else {
         setIntegerParam(ADPNCS_PowerState, 0);
+    }
+
+    if (orthoState == "error") {
+        setIntegerParam(ADStatus, ADStatusError);
+    }
 
     std::string cameraState = baseState + ", " + subState + ", " + orthoState;
     setStringParam(ADPNCS_State, cameraState.c_str());

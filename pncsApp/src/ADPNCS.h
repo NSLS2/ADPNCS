@@ -19,49 +19,101 @@
 #define ADPNCS_REVISION 0
 #define ADPNCS_MODIFICATION 0
 
-typedef enum ADPNCXC_LOG_LEVEL {
-    ADPNCXC_LOG_LEVEL_NONE = 0,      // No logging
-    ADPNCXC_LOG_LEVEL_ERROR = 10,    // Error messages only
-    ADPNCXC_LOG_LEVEL_WARNING = 20,  // Warnings and errors
-    ADPNCXC_LOG_LEVEL_INFO = 30,     // Info, warnings, and errors
-    ADPNCXC_LOG_LEVEL_DEBUG = 40     // Debugging information
-} ADPNCXC_LogLevel_t;
+typedef enum ADPNCS_LOG_LEVEL {
+    ADPNCS_LOG_LEVEL_NONE = 0,      // No logging
+    ADPNCS_LOG_LEVEL_ERROR = 10,    // Error messages only
+    ADPNCS_LOG_LEVEL_WARNING = 20,  // Warnings and errors
+    ADPNCS_LOG_LEVEL_INFO = 30,     // Info, warnings, and errors
+    ADPNCS_LOG_LEVEL_DEBUG = 40     // Debugging information
+} ADPNCS_LogLevel_t;
 
 // Error message formatters
-#define ERR(msg)                                   \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_ERROR) \
+#define ERR(msg)                                  \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_ERROR) \
         printf("ERROR | %s::%s: %s\n", driverName, functionName, msg);
 
-#define ERR_ARGS(fmt, ...)                         \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_ERROR) \
+#define ERR_ARGS(fmt, ...)                        \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_ERROR) \
         printf("ERROR | %s::%s: " fmt "\n", driverName, functionName, __VA_ARGS__);
 
+#define ERR_TO_STATUS(msg)                                             \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_ERROR) {                    \
+        printf("ERROR | %s::%s: %s\n", driverName, functionName, msg); \
+        setStringParam(ADStatusMessage, msg);                          \
+        setIntegerParam(ADStatus, ADStatusError);                      \
+        callParamCallbacks();                                          \
+    }
+
+#define ERR_TO_STATUS_ARGS(fmt, ...)                                      \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_ERROR) {                       \
+        char errMsg[256];                                                 \
+        snprintf(errMsg, sizeof(errMsg), fmt, __VA_ARGS__);               \
+        printf("ERROR | %s::%s: %s\n", driverName, functionName, errMsg); \
+        setStringParam(ADStatusMessage, errMsg);                          \
+        setIntegerParam(ADStatus, ADStatusError);                         \
+        callParamCallbacks();                                             \
+    }
+
 // Warning message formatters
-#define WARN(msg)                                    \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_WARNING) \
+#define WARN(msg)                                   \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_WARNING) \
         printf("WARNING | %s::%s: %s\n", driverName, functionName, msg);
 
-#define WARN_ARGS(fmt, ...)                          \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_WARNING) \
+#define WARN_ARGS(fmt, ...)                         \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_WARNING) \
         printf("WARNING | %s::%s: " fmt "\n", driverName, functionName, __VA_ARGS__);
+
+#define WARN_TO_STATUS(msg)                                              \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_WARNING) {                    \
+        printf("WARNING | %s::%s: %s\n", driverName, functionName, msg); \
+        setStringParam(ADStatusMessage, msg);                            \
+        setIntegerParam(ADStatus, ADStatusError);                        \
+        callParamCallbacks();                                            \
+    }
+
+#define WARN_TO_STATUS_ARGS(fmt, ...)                                        \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_WARNING) {                        \
+        char warnMsg[256];                                                   \
+        epicsSnprintf(warnMsg, sizeof(warnMsg), fmt, __VA_ARGS__);           \
+        printf("WARNING | %s::%s: %s\n", driverName, functionName, warnMsg); \
+        setStringParam(ADStatusMessage, warnMsg);                            \
+        setIntegerParam(ADStatus, ADStatusError);                            \
+        callParamCallbacks();                                                \
+    }
 
 // Info message formatters. Because there is no ASYN trace for info messages, we just use `printf`
 // here.
-#define INFO(msg)                                 \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_INFO) \
+#define INFO(msg)                                \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_INFO) \
         printf("INFO | %s::%s: %s\n", driverName, functionName, msg);
 
-#define INFO_ARGS(fmt, ...)                       \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_INFO) \
+#define INFO_ARGS(fmt, ...)                      \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_INFO) \
         printf("INFO | %s::%s: " fmt "\n", driverName, functionName, __VA_ARGS__);
 
+#define INFO_TO_STATUS(msg)                                           \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_INFO) {                    \
+        printf("INFO | %s::%s: %s\n", driverName, functionName, msg); \
+        setStringParam(ADStatusMessage, msg);                         \
+        callParamCallbacks();                                         \
+    }
+
+#define INFO_TO_STATUS_ARGS(fmt, ...)                                     \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_INFO) {                        \
+        char infoMsg[256];                                                \
+        epicsSnprintf(infoMsg, sizeof(infoMsg), fmt, __VA_ARGS__);        \
+        printf("INFO | %s::%s: %s\n", driverName, functionName, infoMsg); \
+        setStringParam(ADStatusMessage, infoMsg);                         \
+        callParamCallbacks();                                             \
+    }
+
 // Debug message formatters
-#define DEBUG(msg)                                 \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_DEBUG) \
+#define DEBUG(msg)                                \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_DEBUG) \
     printf("DEBUG | %s::%s: %s\n", driverName, functionName, msg)
 
-#define DEBUG_ARGS(fmt, ...)                       \
-    if (this->logLevel >= ADPNCXC_LOG_LEVEL_DEBUG) \
+#define DEBUG_ARGS(fmt, ...)                      \
+    if (this->logLevel >= ADPNCS_LOG_LEVEL_DEBUG) \
         printf("DEBUG | %s::%s: " fmt "\n", driverName, functionName, __VA_ARGS__);
 
 // Define macros that correspond to string representations of PVs from EPICS database template here.
@@ -112,7 +164,7 @@ class ADPNCS : ADDriver {
 #include "ADPNCSParamDefs.h"
 
    private:
-    ADPNCXC_LogLevel_t logLevel = ADPNCXC_LOG_LEVEL_INFO;  // Logging level for the driver
+    ADPNCS_LogLevel_t logLevel = ADPNCS_LOG_LEVEL_INFO;  // Logging level for the driver
 
     const char* detectorAddr;  // Address of the PNBrain detector
     bool acquisitionActive;    // Flag to indicate if acquisition is active
