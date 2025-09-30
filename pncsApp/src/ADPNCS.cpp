@@ -367,6 +367,53 @@ asynStatus ADPNCS::writeFloat64(asynUser *pasynUser, epicsFloat64 value) {
     return status;
 }
 
+asynStatus ADPNCS::readEnum(asynUser *pasynUser, char *strings[], int values[], int severities[],
+                            size_t nElements, size_t *nIn) {
+    int function = pasynUser->reason;
+    const char *functionName = "readEnum";
+
+    // Clear previous maps
+    gainToIdxMap.clear();
+    speedToIdxMap.clear();
+    windowBinToIdxMap.clear();
+
+    *nIn = 0;
+    if (function == ADPNCS_GainMode) {
+        std::vector<std::string> gains = this->papi->GetAvailableGains();
+        std::cout << gains << std::endl;
+        for (size_t i = 0; i < gains.size(); i++) {
+            strings[i] = epicsStrDup(gains[i].c_str());
+            gainToIdxMap[gains[i]] = (int)i;
+            values[i] = (int)i;
+            severities[i] = 0;
+            (*nIn)++;
+        }
+    } else if (function == ADPNCS_FrameRate) {
+        std::vector<std::string> speeds = this->papi->GetAvailableSpeeds();
+        std::cout << speeds << std::endl;
+        for (size_t i = 0; i < speeds.size(); i++) {
+            strings[i] = epicsStrDup(speeds[i].c_str());
+            speedToIdxMap[speeds[i]] = (int)i;
+            values[i] = (int)i;
+            severities[i] = 0;
+            (*nIn)++;
+        }
+    } else if (function == ADPNCS_WindowBinMode) {
+        std::vector<std::string> modes = this->papi->GetAvailableWindowingBinning();
+        std::cout << modes << std::endl;
+        for (size_t i = 0; i < modes.size(); i++) {
+            strings[i] = epicsStrDup(modes[i].c_str());
+            windowBinToIdxMap[modes[i]] = (int)i;
+            values[i] = (int)i;
+            severities[i] = 0;
+            (*nIn)++;
+        }
+    } else {
+        return asynError;
+    }
+    return asynSuccess;
+}
+
 void ADPNCS::report(FILE *fp, int details) {
     const char *functionName = "report";
     if (details > 0) {
@@ -397,10 +444,30 @@ void ADPNCS::parseStatus() {
     setIntegerParam(ADSizeY, ySize);
 
     setDoubleParam(ADPNCS_TempSetpoint, hardwareStatus.Get<double>("/operating_temperature", 0.0));
-    setDoubleParam(ADPNCS_Temp, hardwareStatus.Get<double>("/pnbrain/temperature/detector", 0.0));
-    setDoubleParam(ADPNCS_HeatsinkTemp,
-                   hardwareStatus.Get<double>("/pnbrain/temperature/sink", 0.0));
+    setIntegerParam(ADPNCS_Temp, hardwareStatus.Get<int>("/pnbrain/temperature/detector", 0));
+    setIntegerParam(ADPNCS_HeatsinkTemp, hardwareStatus.Get<int>("/pnbrain/temperature/sink", 0));
 
+    pncs::types::json::JSON timingSettings =
+        hardwareStatus.Get<pncs::types::json::JSON>("/timing_settings", pncs::types::json::JSON());
+
+    std::string gainMode = timingSettings.Get<std::string>("/gain", "Unknown");
+    std::string speedMode = timingSettings.Get<std::string>("/speed", "Unknown");
+    std::string windowBinMode = timingSettings.Get<std::string>("/windowing_binning", "Unknown");
+    if (gainToIdxMap.find(gainMode) == gainToIdxMap.end()) {
+        ERR_ARGS("Unknown gain mode: %s", gainMode.c_str());
+    } else {
+        setIntegerParam(ADPNCS_GainMode, gainToIdxMap[gainMode]);
+    }
+    if (speedToIdxMap.find(speedMode) == speedToIdxMap.end()) {
+        ERR_ARGS("Unknown speed mode: %s", speedMode.c_str());
+    } else {
+        setIntegerParam(ADPNCS_FrameRate, speedToIdxMap[speedMode]);
+    }
+    if (windowBinToIdxMap.find(windowBinMode) == windowBinToIdxMap.end()) {
+        ERR_ARGS("Unknown window/binning mode: %s", windowBinMode.c_str());
+    } else {
+        setIntegerParam(ADPNCS_WindowBinMode, windowBinToIdxMap[windowBinMode]);
+    }
     pncs::types::json::JSON measurementStatus = status.Get<pncs::types::json::JSON>(
         "/parameter_storage_content/measurement_settings", pncs::types::json::JSON());
 
@@ -481,7 +548,8 @@ void ADPNCS::parseStatus() {
 //----------------------------------------------------------------------------
 
 ADPNCS::ADPNCS(const char *portName, const char *detectorAddr)
-    : ADDriver(portName, 1, (int)NUM_PNCS_PARAMS, 0, 0, 0, 0, 0, 1, 0, 0) {
+    : ADDriver(portName, 1, (int)NUM_PNCS_PARAMS, 0, 0, asynEnumMask, asynEnumMask, ASYN_CANBLOCK,
+               1, 0, 0) {
     static const char *functionName = "ADPNCS";
     createAllParams();
 

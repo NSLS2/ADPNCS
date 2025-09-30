@@ -152,6 +152,8 @@ class ADPNCS : ADDriver {
     // ADDriver overrides
     virtual asynStatus writeInt32(asynUser* pasynUser, epicsInt32 value);
     virtual asynStatus writeFloat64(asynUser* pasynUser, epicsFloat64 value);
+    virtual asynStatus readEnum(asynUser* pasynUser, char* strings[], int values[],
+                                int severities[], size_t nElements, size_t* nIn);
     virtual void report(FILE* fp, int details);
 
     // Destructor. Disconnects from the detector and performs cleanup
@@ -177,6 +179,10 @@ class ADPNCS : ADDriver {
     void acquireStart();
     void acquireStop();
     void createAllParams();
+
+    std::map<std::string, int> gainToIdxMap;
+    std::map<std::string, int> speedToIdxMap;
+    std::map<std::string, int> windowBinToIdxMap;
 };
 
 // Stores number of additional PV parameters are added by the driver

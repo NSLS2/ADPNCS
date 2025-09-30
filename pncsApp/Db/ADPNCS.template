@@ -109,18 +109,8 @@ record(mbbi, "$(P)$(R)CameraMode_RBV"){
     field(SCAN, "I/O Intr")
 }
 
-record(ao, "$(P)$(R)TemperatureSetpoint"){
-    field(DESC, "Temperature Setpoint")
-    field(DTYP, "asynFloat64")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMP_SETPOINT")
-    field(EGU, "C")
-    field(VAL, "0")
-    field(PREC, "1")
-    field(PINI, "NO")
-}
-
-record(ai, "$(P)$(R)TemperatureSetpoint_RBV"){
-    field(DESC, "Temp Setpoint Readback")
+record(ai, "$(P)$(R)OperatingTemp_RBV"){
+    field(DESC, "Operating Temperature")
     field(DTYP, "asynFloat64")
     field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMP_SETPOINT")
     field(EGU, "C")
@@ -130,22 +120,20 @@ record(ai, "$(P)$(R)TemperatureSetpoint_RBV"){
 }
 
 record(ai, "$(P)$(R)Temperature_RBV"){
-    field(DESC, "Temp Readback")
-    field(DTYP, "asynFloat64")
+    field(DESC, "Detector Temp")
+    field(DTYP, "asynInt32")
     field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMP")
     field(EGU, "C")
     field(VAL, "0")
-    field(PREC, "1")
     field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)HeatsinkTemperature_RBV"){
-    field(DESC, "Heatsink Temp Readback")
-    field(DTYP, "asynFloat64")
+    field(DESC, "Heatsink Temp")
+    field(DTYP, "asynInt32")
     field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_HEATSINK_TEMP")
     field(EGU, "C")
     field(VAL, "0")
-    field(PREC, "1")
     field(SCAN, "I/O Intr")
 }
 
@@ -275,5 +263,48 @@ record(ai, "$(P)$(R)ConnectionStatus_RBV"){
     field(DTYP, "asynInt32")
     field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_CONNECTION_STATUS")
     field(VAL, "0")
+    field(SCAN, "I/O Intr")
+}
+
+
+record(mbbo, "$(P)$(R)GainMode"){
+    field(DESC, "Gain Mode")
+    field(DTYP, "asynInt32")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_GAIN_MODE")
+    field(PINI, "NO")
+}
+
+record(mbbi, "$(P)$(R)GainMode_RBV"){
+    field(DESC, "Gain Mode Readback")
+    field(DTYP, "asynInt32")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_GAIN_MODE")
+    field(SCAN, "I/O Intr")
+}
+
+record(mbbo, "$(P)$(R)FrameRate"){
+    field(DESC, "Frame Rate")
+    field(DTYP, "asynInt32")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_FRAME_RATE")
+    field(PINI, "NO")
+}
+
+record(mbbi, "$(P)$(R)FrameRate_RBV"){
+    field(DESC, "Frame Rate Readback")
+    field(DTYP, "asynInt32")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_FRAME_RATE")
+    field(SCAN, "I/O Intr")
+}
+
+record(mbbo, "$(P)$(R)WindowBinMode") {
+    field(DESC, "Window Bin Mode")
+    field(DTYP, "asynInt32")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_WINDOW_BIN_MODE")
+    field(PINI, "NO")
+}
+
+record(mbbi, "$(P)$(R)WindowBinMode_RBV") {
+    field(DESC, "Window Bin Mode Readback")
+    field(DTYP, "asynInt32")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_WINDOW_BIN_MODE")
     field(SCAN, "I/O Intr")
 }
