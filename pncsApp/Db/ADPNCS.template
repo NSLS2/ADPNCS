@@ -1,4 +1,4 @@
-# Author: 
+# Author:
 
 ##################################################################
 # Define all of your PV records here in the following form:
@@ -12,7 +12,7 @@
 #
 # Consult other .template files for guides on how to write specific PVs
 #
-# The PV_NAME at the end of the INP or OUT field of the record is the 
+# The PV_NAME at the end of the INP or OUT field of the record is the
 # PVString defined in ADPNDetectorCXC.h.
 #
 # example: #define ADPNDetectorCXC "PV_NAME"

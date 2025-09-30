@@ -45,6 +45,6 @@ int ADPNCS_Temperature;
 #define ADPNCS_FIRST_PARAM ADPNCS_TemperatureSetpoint
 #define ADPNCS_LAST_PARAM ADPNCS_Temperature
 
-#define NUM_ADPNCS_PARAMS ((int) (&ADPNCS_LAST_PARAM - &ADPNCS_FIRST_PARAM + 1))
+#define NUM_ADPNCS_PARAMS ((int)(&ADPNCS_LAST_PARAM - &ADPNCS_FIRST_PARAM + 1))
 
 #endif

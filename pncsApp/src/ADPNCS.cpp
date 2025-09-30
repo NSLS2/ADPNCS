@@ -1,38 +1,34 @@
 /**
- * Main source file for the ADPNCS EPICS driver 
- * 
+ * Main source file for the ADPNCS EPICS driver
+ *
  * This file was initially generated with the help of the ADDriverTemplate:
  * https://github.com/NSLS2/ADDriverTemplate on 07/07/2025
- * 
+ *
  * Author: Jakub Wlodek
- * 
+ *
  * Copyright (c) : Brookhaven National Laboratory, 2025
- * 
+ *
  */
-
-
 
 #include "ADPNCS.h"
 
 using namespace std;
 
-const char* driverName = "ADPNCS";
-
+const char *driverName = "ADPNCS";
 
 std::ostream &operator<<(std::ostream &os, const pncs::types::json::JSON &o) {
-  pncs::types::json::JSON j = o;
-  os << j.Dump();
-  return os;
+    pncs::types::json::JSON j = o;
+    os << j.Dump();
+    return os;
 }
 
 template <typename T>
 std::ostream &operator<<(std::ostream &os, const std::vector<T> &o) {
-  for (auto &v : o) {
-    std::cout << v << " ";
-  }
-  return os;
+    for (auto &v : o) {
+        std::cout << v << " ";
+    }
+    return os;
 }
-
 
 /*
  * External configuration function for ADPNCS.
@@ -42,11 +38,10 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &o) {
  * @params[in]: all passed into constructor
  * @return:     status
  */
-extern "C" int ADPNCSConfig(const char* portName, const char* detectorAddr) {
+extern "C" int ADPNCSConfig(const char *portName, const char *detectorAddr) {
     new ADPNCS(portName, detectorAddr);
-    return(asynSuccess);
+    return (asynSuccess);
 }
-
 
 /*
  * Callback function fired when IOC is terminated.
@@ -55,12 +50,10 @@ extern "C" int ADPNCSConfig(const char* portName, const char* detectorAddr) {
  * @params[in]: pPvt -> pointer to the driver object created in ADPNCSConfig
  * @return:     void
  */
-static void exitCallbackC(void* pPvt){
-    ADPNCS* pPNCS = (ADPNCS*) pPvt;
-    delete(pPNCS);
+static void exitCallbackC(void *pPvt) {
+    ADPNCS *pPNCS = (ADPNCS *)pPvt;
+    delete (pPNCS);
 }
-
-
 
 /**
  * @brief Wrapper C function passed to epicsThreadCreate to create acquisition thread
@@ -72,7 +65,6 @@ static void acquisitionThreadC(void *drvPvt) {
     pPvt->acquisitionThread();
 }
 
-
 static void monitorThreadC(void *drvPvt) {
     ADPNCS *pPvt = (ADPNCS *)drvPvt;
     pPvt->monitorThread();
@@ -80,7 +72,6 @@ static void monitorThreadC(void *drvPvt) {
 // -----------------------------------------------------------------------
 // ADPNCS Acquisition Functions
 // -----------------------------------------------------------------------
-
 
 /**
  * Function that spawns new acquisition thread, if able
@@ -122,7 +113,6 @@ void ADPNCS::monitorThread() {
     }
 }
 
-
 /**
  * @brief Main acquisition function for ADKinetix
  */
@@ -136,18 +126,17 @@ void ADPNCS::acquisitionThread() {
     getIntegerParam(NDColorMode, (int *)&colorMode);
     getIntegerParam(NDDataType, (int *)&dataType);
 
-    int ndims = 3; // For color
-    if (colorMode == NDColorModeMono)
-        ndims = 2; // For monochrome
+    int ndims = 3;                                // For color
+    if (colorMode == NDColorModeMono) ndims = 2;  // For monochrome
 
     size_t dims[ndims];
-    if(ndims == 2){
-        getIntegerParam(ADSizeX, (int*) &dims[0]);
-        getIntegerParam(ADSizeY, (int*) &dims[1]);
+    if (ndims == 2) {
+        getIntegerParam(ADSizeX, (int *)&dims[0]);
+        getIntegerParam(ADSizeY, (int *)&dims[1]);
     } else {
         dims[0] = 3;
-        getIntegerParam(ADSizeX, (int*) &dims[1]);
-        getIntegerParam(ADSizeY, (int*) &dims[2]);
+        getIntegerParam(ADSizeX, (int *)&dims[1]);
+        getIntegerParam(ADSizeY, (int *)&dims[2]);
     }
 
     int collectedImages = 0;
@@ -217,7 +206,6 @@ void ADPNCS::acquisitionThread() {
     callParamCallbacks();
 }
 
-
 /**
  * @brief stops acquisition by aborting exposure and joining acq thread
  */
@@ -225,7 +213,6 @@ void ADPNCS::acquireStop() {
     const char *functionName = "acquireStop";
 
     if (this->acquisitionActive) {
-
         // Mark acquisition as inactive
         this->acquisitionActive = false;
 
@@ -241,11 +228,9 @@ void ADPNCS::acquireStop() {
     }
 }
 
-
 //-------------------------------------------------------------------------
 // ADDriver function overwrites
 //-------------------------------------------------------------------------
-
 
 /*
  * Function overwriting ADDriver base function.
@@ -255,85 +240,85 @@ void ADPNCS::acquireStop() {
  * @params[in]: value           -> int32 value to write
  * @return: asynStatus      -> success if write was successful, else failure
  */
-asynStatus ADPNCS::writeInt32(asynUser* pasynUser, epicsInt32 value){
+asynStatus ADPNCS::writeInt32(asynUser *pasynUser, epicsInt32 value) {
     int function = pasynUser->reason;
     int acquiring;
     int status = asynSuccess;
-    static const char* functionName = "writeInt32";
+    static const char *functionName = "writeInt32";
     getIntegerParam(ADAcquire, &acquiring);
 
     status = setIntegerParam(function, value);
     // start/stop acquisition
-    if(function == ADAcquire){
-        if(value && !acquiring){
+    if (function == ADAcquire) {
+        if (value && !acquiring) {
             acquireStart();
         }
-        if(!value && acquiring){
+        if (!value && acquiring) {
             acquireStop();
         }
-    } else if(function == ADPNCS_PowerState) {
-        if(acquiring == 1) acquireStop();
-        if(value == 1) {
+    } else if (function == ADPNCS_PowerState) {
+        if (acquiring == 1) acquireStop();
+        if (value == 1) {
             papi->TurnOn();
         } else {
             papi->TurnOff();
         }
-    } else if(function == ADPNCS_Calibrate){
-        if(acquiring == 1) acquireStop();
-        if(value == 1) {
+    } else if (function == ADPNCS_Calibrate) {
+        if (acquiring == 1) acquireStop();
+        if (value == 1) {
             setIntegerParam(ADPNCS_Calibrate, 0);
             papi->StartCalibration();
         } else {
             papi->StopCalibration();
         }
-    } else if(function == ADPNCS_BeamBlankState){
-        if(acquiring == 1) acquireStop();
-        if(value == 1) {
+    } else if (function == ADPNCS_BeamBlankState) {
+        if (acquiring == 1) acquireStop();
+        if (value == 1) {
             papi->ConfirmBeamBlank();
         } else {
             papi->ConfirmBeamUnblank();
         }
-    } else if (function == ADPNCS_VoltageState){
-        if(acquiring == 1) acquireStop();
-        if(value == 1) {
+    } else if (function == ADPNCS_VoltageState) {
+        if (acquiring == 1) acquireStop();
+        if (value == 1) {
             papi->VoltageOn();
         } else {
             papi->VoltageOff();
         }
-    } else if(function == ADPNCS_CoolingState){
-        if(acquiring == 1) acquireStop();
-        if(value == 1) {
+    } else if (function == ADPNCS_CoolingState) {
+        if (acquiring == 1) acquireStop();
+        if (value == 1) {
             papi->CoolDown();
         } else {
             papi->StopCooling();
         }
-    } else if(function == ADPNCS_HeatingState){
-        if(acquiring == 1) acquireStop();
-        if(value == 1) {
+    } else if (function == ADPNCS_HeatingState) {
+        if (acquiring == 1) acquireStop();
+        if (value == 1) {
             papi->HeatUp();
         } else {
             papi->StopHeating();
         }
     }
 
-    else if(function == ADImageMode)
-        if(acquiring == 1) acquireStop();
+    else if (function == ADImageMode)
+        if (acquiring == 1)
+            acquireStop();
 
-    else{
-        if (function < ADPNCS_FIRST_PARAM) {
-            status = ADDriver::writeInt32(pasynUser, value);
+        else {
+            if (function < ADPNCS_FIRST_PARAM) {
+                status = ADDriver::writeInt32(pasynUser, value);
+            }
         }
-    }
     callParamCallbacks();
 
-    if(status){
+    if (status) {
         ERR_ARGS("status=%d, function=%d, value=%d\n", status, function, value);
         return asynError;
-    }
-    else DEBUG_ARGS("function=%d value=%d\n", function, value);
+    } else
+        DEBUG_ARGS("function=%d value=%d\n", function, value);
     return asynSuccess;
 }
-
 
 /*
  * Function overwriting ADDriver base function.
@@ -344,60 +329,58 @@ asynStatus ADPNCS::writeInt32(asynUser* pasynUser, epicsInt32 value){
  * @params[in]: value           -> int32 value to write
  * @return: asynStatus      -> success if write was successful, else failure
  */
-asynStatus ADPNCS::writeFloat64(asynUser* pasynUser, epicsFloat64 value){
+asynStatus ADPNCS::writeFloat64(asynUser *pasynUser, epicsFloat64 value) {
     int function = pasynUser->reason;
     int acquiring;
     asynStatus status = asynSuccess;
-    static const char* functionName = "writeFloat64";
+    static const char *functionName = "writeFloat64";
     getIntegerParam(ADAcquire, &acquiring);
 
     status = setDoubleParam(function, value);
 
-    if(function == ADAcquireTime){
-        if(acquiring) acquireStop();
-    }
-    else{
-        if(function < ADPNCS_FIRST_PARAM){
+    if (function == ADAcquireTime) {
+        if (acquiring) acquireStop();
+    } else {
+        if (function < ADPNCS_FIRST_PARAM) {
             status = ADDriver::writeFloat64(pasynUser, value);
         }
     }
     callParamCallbacks();
 
-    if(status){
+    if (status) {
         ERR_ARGS("status=%d, function=%d, value=%f\n", status, function, value);
         return asynError;
-    }
-    else DEBUG_ARGS("function=%d value=%f\n", function, value);
+    } else
+        DEBUG_ARGS("function=%d value=%f\n", function, value);
     return status;
 }
-
 
 /*
  * Function used for reporting ADUVC device and library information to a external
  * log file. The function first prints all libuvc specific information to the file,
  * then continues on to the base ADDriver 'report' function
- * 
+ *
  * @params[in]: fp      -> pointer to log file
  * @params[in]: details -> number of details to write to the file
  * @return: void
  */
-void ADPNCS::report(FILE* fp, int details){
-    const char* functionName = "report";
-    if(details > 0){
+void ADPNCS::report(FILE *fp, int details) {
+    const char *functionName = "report";
+    if (details > 0) {
         ADDriver::report(fp, details);
     }
 }
 
-
-void ADPNCS::parseStatus(){
-
+void ADPNCS::parseStatus() {
     auto status = papi->GetStatus();
     std::cout << "Current status: " << status << std::endl;
 
-    pncs::types::json::JSON hardwareConfig = status.Get<pncs::types::json::JSON>("/parameter_storage_content/hardware_config", pncs::types::json::JSON());
+    pncs::types::json::JSON hardwareConfig = status.Get<pncs::types::json::JSON>(
+        "/parameter_storage_content/hardware_config", pncs::types::json::JSON());
     setStringParam(ADModel, hardwareConfig.Get<std::string>("/system_flavor", "Unknown"));
 
-    pncs::types::json::JSON hardwareStatus = status.Get<pncs::types::json::JSON>("/parameter_storage_content/hardware_status", pncs::types::json::JSON());
+    pncs::types::json::JSON hardwareStatus = status.Get<pncs::types::json::JSON>(
+        "/parameter_storage_content/hardware_status", pncs::types::json::JSON());
 
     // Get number of columns in x and y
     int xMaxSize = hardwareStatus.Get<int>("/area_columns", 0);
@@ -410,12 +393,16 @@ void ADPNCS::parseStatus(){
     setIntegerParam(ADSizeX, xSize);
     setIntegerParam(ADSizeY, ySize);
 
-    setDoubleParam(ADPNCS_Temperature, hardwareStatus.Get<double>("/pnbrain/temperature/detector", 0.0));
-    setDoubleParam(ADPNCS_HeatsinkTemperature, hardwareStatus.Get<double>("/pnbrain/temperature/sink", 0.0));
+    setDoubleParam(ADPNCS_Temperature,
+                   hardwareStatus.Get<double>("/pnbrain/temperature/detector", 0.0));
+    setDoubleParam(ADPNCS_HeatsinkTemperature,
+                   hardwareStatus.Get<double>("/pnbrain/temperature/sink", 0.0));
 
-    pncs::types::json::JSON measurementStatus = status.Get<pncs::types::json::JSON>("/parameter_storage_content/measurement_settings", pncs::types::json::JSON());
+    pncs::types::json::JSON measurementStatus = status.Get<pncs::types::json::JSON>(
+        "/parameter_storage_content/measurement_settings", pncs::types::json::JSON());
 
-    bool commonModeCorrection = measurementStatus.Get<bool>("/common_mode_correction/enabled", false);
+    bool commonModeCorrection =
+        measurementStatus.Get<bool>("/common_mode_correction/enabled", false);
     setIntegerParam(ADPNCS_CommonModeCorrection, commonModeCorrection ? 1 : 0);
 
     bool dynamicCalibration = measurementStatus.Get<bool>("/dynamic_calibration", false);
@@ -423,30 +410,35 @@ void ADPNCS::parseStatus(){
 
     double primaryThresh = measurementStatus.Get<double>("/event_analysis/primary_threshold", 0.0);
     setDoubleParam(ADPNCS_PrimaryThreshold, primaryThresh);
-    double secondaryThresh = measurementStatus.Get<double>("/event_analysis/secondary_threshold", 0.0);
+    double secondaryThresh =
+        measurementStatus.Get<double>("/event_analysis/secondary_threshold", 0.0);
     setDoubleParam(ADPNCS_SecondaryThreshold, secondaryThresh);
 
     bool liveRunningCorrection = measurementStatus.Get<bool>("/live_running_correction", false);
     setIntegerParam(ADPNCS_LiveRunningCorrection, liveRunningCorrection ? 1 : 0);
 
-    pncs::types::json::JSON software_status = status.Get<pncs::types::json::JSON>("/parameter_storage_content/software_status", pncs::types::json::JSON());
+    pncs::types::json::JSON software_status = status.Get<pncs::types::json::JSON>(
+        "/parameter_storage_content/software_status", pncs::types::json::JSON());
     bool daqConnected = software_status.Get<bool>("/daq/connected", false);
     bool hwConnected = software_status.Get<bool>("/hwc/connected", false);
     bool pnbrainConnected = software_status.Get<bool>("/pnbrain/connected", false);
     int connectionStatus = 0;
-    if(daqConnected) connectionStatus = connectionStatus + 1;
-    if(hwConnected) connectionStatus = connectionStatus + 2;
-    if(pnbrainConnected) connectionStatus = connectionStatus + 4;
+    if (daqConnected) connectionStatus = connectionStatus + 1;
+    if (hwConnected) connectionStatus = connectionStatus + 2;
+    if (pnbrainConnected) connectionStatus = connectionStatus + 4;
     setIntegerParam(ADPNCS_ConnectionStatus, connectionStatus);
 
-    pncs::types::json::JSON stateMachineState = software_status.Get<pncs::types::json::JSON>("/master/state_machine", pncs::types::json::JSON());
+    pncs::types::json::JSON stateMachineState = software_status.Get<pncs::types::json::JSON>(
+        "/master/state_machine", pncs::types::json::JSON());
 
     std::string baseState = stateMachineState.Get<std::string>("/state", "Unknown");
     std::string subState = stateMachineState.Get<std::string>("/substate", "Unknown");
     std::string orthoState = stateMachineState.Get<std::string>("/orthogonal_state", "Unknown");
 
-    if(baseState == "ready") setIntegerParam(ADPNCS_PowerState, 1);
-    else setIntegerParam(ADPNCS_PowerState, 0);
+    if (baseState == "ready")
+        setIntegerParam(ADPNCS_PowerState, 1);
+    else
+        setIntegerParam(ADPNCS_PowerState, 0);
 
     std::string cameraState = baseState + ", " + subState + ", " + orthoState;
     setStringParam(ADPNCS_State, cameraState.c_str());
@@ -454,20 +446,19 @@ void ADPNCS::parseStatus(){
     callParamCallbacks();
 }
 
-
 //----------------------------------------------------------------------------
 // ADPNCS Constructor/Destructor
 //----------------------------------------------------------------------------
 
-
-ADPNCS::ADPNCS(const char* portName, const char* detectorAddr)
-    : ADDriver(portName, 1, (int) NUM_PNCS_PARAMS, 0, 0, 0, 0, 0, 1, 0, 0){
-    static const char* functionName = "ADPNCS";
+ADPNCS::ADPNCS(const char *portName, const char *detectorAddr)
+    : ADDriver(portName, 1, (int)NUM_PNCS_PARAMS, 0, 0, 0, 0, 0, 1, 0, 0) {
+    static const char *functionName = "ADPNCS";
     createAllParams();
 
-    // Sets driver version PV (version numbers defined in header file) 
+    // Sets driver version PV (version numbers defined in header file)
     char versionString[25];
-    epicsSnprintf(versionString, sizeof(versionString), "%d.%d.%d", ADPNCS_VERSION, ADPNCS_REVISION, ADPNCS_MODIFICATION);
+    epicsSnprintf(versionString, sizeof(versionString), "%d.%d.%d", ADPNCS_VERSION, ADPNCS_REVISION,
+                  ADPNCS_MODIFICATION);
     setStringParam(NDDriverVersion, versionString);
     setStringParam(ADManufacturer, "PNDetector GmbH");
 
@@ -485,14 +476,13 @@ ADPNCS::ADPNCS(const char* portName, const char* detectorAddr)
     epicsAtExit(exitCallbackC, this);
 }
 
-
-ADPNCS::~ADPNCS(){
-    const char* functionName = "~ADPNCS";
+ADPNCS::~ADPNCS() {
+    const char *functionName = "~ADPNCS";
 
     INFO("Shutting down ADPNCS driver...");
-    if(this->acquisitionActive && this->acquisitionThreadId != NULL) acquireStop();
+    if (this->acquisitionActive && this->acquisitionThreadId != NULL) acquireStop();
     this->alive = false;
-    if(this->monitorThreadId != NULL){
+    if (this->monitorThreadId != NULL) {
         INFO("Waiting for monitor thread to join...");
         epicsThreadMustJoin(this->monitorThreadId);
         INFO("Monitor thread joined.");
@@ -502,40 +492,32 @@ ADPNCS::~ADPNCS(){
     INFO("Done.");
 }
 
-
 //-------------------------------------------------------------
 // ADPNCS ioc shell registration
 //-------------------------------------------------------------
 
 /* PNCSConfig -> These are the args passed to the constructor in the epics config function */
-static const iocshArg PNCSConfigArg0 = { "Port name",        iocshArgString };
+static const iocshArg PNCSConfigArg0 = {"Port name", iocshArgString};
 
-// This parameter must be customized by the driver author. Generally a URL, Serial Number, ID, IP are used to connect.
-static const iocshArg PNCSConfigArg1 = { "Connection Param", iocshArgString };
-
+// This parameter must be customized by the driver author. Generally a URL, Serial Number, ID, IP
+// are used to connect.
+static const iocshArg PNCSConfigArg1 = {"Connection Param", iocshArgString};
 
 /* Array of config args */
-static const iocshArg * const PNCSConfigArgs[] =
-        { &PNCSConfigArg0, &PNCSConfigArg1 };
-
+static const iocshArg *const PNCSConfigArgs[] = {&PNCSConfigArg0, &PNCSConfigArg1};
 
 /* what function to call at config */
 static void configPNCSCallFunc(const iocshArgBuf *args) {
     ADPNCSConfig(args[0].sval, args[1].sval);
 }
 
-
 /* information about the configuration function */
-static const iocshFuncDef configPNCS = { "ADPNCSConfig", 2, PNCSConfigArgs };
-
+static const iocshFuncDef configPNCS = {"ADPNCSConfig", 2, PNCSConfigArgs};
 
 /* IOC register function */
-static void PNCSRegister(void) {
-    iocshRegister(&configPNCS, configPNCSCallFunc);
-}
-
+static void PNCSRegister(void) { iocshRegister(&configPNCS, configPNCSCallFunc); }
 
 /* external function for IOC register */
 extern "C" {
-    epicsExportRegistrar(PNCSRegister);
+epicsExportRegistrar(PNCSRegister);
 }
