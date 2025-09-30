@@ -136,6 +136,7 @@ typedef enum ADPNCS_LOG_LEVEL {
 
 #include "ADDriver.h"
 #include "pncs_api.h"
+#include "pncs_stream.h"
 #include "rpc_lib_base/server_builder.h"
 #include "types_lib/measurement.h"
 
@@ -168,9 +169,9 @@ class ADPNCS : ADDriver {
    private:
     ADPNCS_LogLevel_t logLevel = ADPNCS_LOG_LEVEL_INFO;  // Logging level for the driver
 
-    const char* detectorAddr;  // Address of the PNBrain detector
-    bool acquisitionActive;    // Flag to indicate if acquisition is active
-    bool alive = true;         // Flag to control the monitor thread
+    const char* detectorAddr;             // Address of the PNBrain detector
+    std::atomic<bool> acquisitionActive;  // Flag to indicate if acquisition is active
+    bool alive = true;                    // Flag to control the monitor thread
     epicsThreadId acquisitionThreadId,
         monitorThreadId;  // Thread IDs for acquisition and monitoring threads
 

@@ -140,17 +140,48 @@ void ADPNCS::acquisitionThread() {
     }
 
     int collectedImages = 0;
+    setIntegerParam(ADNumImagesCounter, collectedImages);
+    callParamCallbacks();
 
-    // Start the acquisition given resolution, data type, color mode here
-    this->acquisitionActive = true;
+    // Start live view on the detector
+    this->papi->StartLiveView(pncs::types::Measurement());
+    std::this_thread::sleep_for(std::chrono::seconds{2});  // Wait for live view to start
+    int liveViewActive;
+    getIntegerParam(ADStatus, &liveViewActive);
+    while (liveViewActive != ADStatusAcquire) {
+        getIntegerParam(ADStatus, &liveViewActive);
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});  // Wait for live view to start
+    }
 
-    while (acquisitionActive) {
-        setIntegerParam(ADStatus, ADStatusAcquire);
+    int acquisitionMode;
+    getIntegerParam(ADImageMode, &acquisitionMode);
+    int targetNumImages = 1;
+    if (acquisitionMode == ADImageMultiple) getIntegerParam(ADNumImages, &targetNumImages);
 
+    auto stream = pncs::Stream(this->detectorAddr, 50055, "test");
+    stream.Connect();
+    acquisitionActive = true;
+
+    std::atomic<bool> stopStreaming = false;
+    auto [status, frameQueue] =
+        stream.FrameFloat("common_mode_corrected", targetNumImages, stopStreaming, 100);
+
+    if (!status.ok()) {
+        std::cout << "Error: " << status.error_message() << std::endl;
+        this->papi->TurnOff();
+    }
+
+    int index = 0;
+    while (index < targetNumImages && this->acquisitionActive) {
+        printf("Here!\n");
         // Get a new frame using the vendor SDK here here
+        auto frame = frameQueue->Pop();
+        auto stats = frameQueue->GetStatistics();
+        index = stats.taken_uniques + stats.total_discards;
+        INFO_ARGS("Waiting for frame %d/%d...", index + 1, targetNumImages);
 
         // Allocate the NDArray of the correct size
-        this->pArrays[0] = pNDArrayPool->alloc(ndims, dims, dataType, 0, NULL);
+        this->pArrays[0] = pNDArrayPool->alloc(ndims, dims, NDFloat32, 0, NULL);
         if (this->pArrays[0] != NULL) {
             pArray = this->pArrays[0];
         } else {
@@ -172,7 +203,7 @@ void ADPNCS::acquisitionThread() {
         setIntegerParam(NDArraySizeY, arrayInfo.ySize);
 
         // Copy data from new frame to pArray
-        // memcpy(pArray->pData, POINTER_TO_FRAME_DATA, arrayInfo.totalBytes);
+        memcpy(pArray->pData, frame.data.data(), arrayInfo.totalBytes);
 
         // increment the array counter
         int arrayCounter;
@@ -187,19 +218,16 @@ void ADPNCS::acquisitionThread() {
         getAttributes(pArray->pAttributeList);
         doCallbacksGenericPointer(pArray, NDArrayData, 0);
 
-        // If in single mode, finish acq, if in multiple mode and reached target number
-        // complete acquisition.
-        // if (acquisitionMode == ADImageSingle) {
-        //     this->acquisitionActive = false;
-        // } else if (acquisitionMode == ADImageMultiple && collectedImages == targetNumImages) {
-        //     this->acquisitionActive = false;
-        // }
         // Release the array
         pArray->release();
 
         // refresh all PVs
         callParamCallbacks();
     }
+
+    this->papi->StopLiveView();
+    stopStreaming = true;
+    acquisitionActive = false;
 
     setIntegerParam(ADStatus, ADStatusIdle);
     setIntegerParam(ADAcquire, 0);
@@ -447,27 +475,28 @@ void ADPNCS::parseStatus() {
     setIntegerParam(ADPNCS_Temp, hardwareStatus.Get<int>("/pnbrain/temperature/detector", 0));
     setIntegerParam(ADPNCS_HeatsinkTemp, hardwareStatus.Get<int>("/pnbrain/temperature/sink", 0));
 
-    pncs::types::json::JSON timingSettings =
-        hardwareStatus.Get<pncs::types::json::JSON>("/timing_settings", pncs::types::json::JSON());
+    // pncs::types::json::JSON timingSettings =
+    //     hardwareStatus.Get<pncs::types::json::JSON>("/timing_settings",
+    //     pncs::types::json::JSON());
 
-    std::string gainMode = timingSettings.Get<std::string>("/gain", "Unknown");
-    std::string speedMode = timingSettings.Get<std::string>("/speed", "Unknown");
-    std::string windowBinMode = timingSettings.Get<std::string>("/windowing_binning", "Unknown");
-    if (gainToIdxMap.find(gainMode) == gainToIdxMap.end()) {
-        ERR_ARGS("Unknown gain mode: %s", gainMode.c_str());
-    } else {
-        setIntegerParam(ADPNCS_GainMode, gainToIdxMap[gainMode]);
-    }
-    if (speedToIdxMap.find(speedMode) == speedToIdxMap.end()) {
-        ERR_ARGS("Unknown speed mode: %s", speedMode.c_str());
-    } else {
-        setIntegerParam(ADPNCS_FrameRate, speedToIdxMap[speedMode]);
-    }
-    if (windowBinToIdxMap.find(windowBinMode) == windowBinToIdxMap.end()) {
-        ERR_ARGS("Unknown window/binning mode: %s", windowBinMode.c_str());
-    } else {
-        setIntegerParam(ADPNCS_WindowBinMode, windowBinToIdxMap[windowBinMode]);
-    }
+    // std::string gainMode = timingSettings.Get<std::string>("/gain", "Unknown");
+    // std::string speedMode = timingSettings.Get<std::string>("/speed", "Unknown");
+    // std::string windowBinMode = timingSettings.Get<std::string>("/windowing_binning", "Unknown");
+    // if (gainToIdxMap.find(gainMode) == gainToIdxMap.end()) {
+    //     ERR_ARGS("Unknown gain mode: %s", gainMode.c_str());
+    // } else {
+    //     setIntegerParam(ADPNCS_GainMode, gainToIdxMap[gainMode]);
+    // }
+    // if (speedToIdxMap.find(speedMode) == speedToIdxMap.end()) {
+    //     ERR_ARGS("Unknown speed mode: %s", speedMode.c_str());
+    // } else {
+    //     setIntegerParam(ADPNCS_FrameRate, speedToIdxMap[speedMode]);
+    // }
+    // if (windowBinToIdxMap.find(windowBinMode) == windowBinToIdxMap.end()) {
+    //     ERR_ARGS("Unknown window/binning mode: %s", windowBinMode.c_str());
+    // } else {
+    //     setIntegerParam(ADPNCS_WindowBinMode, windowBinToIdxMap[windowBinMode]);
+    // }
     pncs::types::json::JSON measurementStatus = status.Get<pncs::types::json::JSON>(
         "/parameter_storage_content/measurement_settings", pncs::types::json::JSON());
 
@@ -508,14 +537,14 @@ void ADPNCS::parseStatus() {
     std::string subState = stateMachineState.Get<std::string>("/substate", "Unknown");
     std::string orthoState = stateMachineState.Get<std::string>("/orthogonal_state", "Unknown");
 
-    if (baseState == "ready" || baseState == "cold") {
+    if (baseState != "off") {
         setIntegerParam(ADPNCS_PowerState, 1);
         if (orthoState == "busy") {
             setIntegerParam(ADStatus, ADStatusWaiting);
+        } else if (baseState == "live_view") {
+            setIntegerParam(ADStatus, ADStatusAcquire);
         } else if (subState == "operating") {
             setIntegerParam(ADStatus, ADStatusIdle);
-        } else if (subState == "live_view") {
-            setIntegerParam(ADStatus, ADStatusAcquire);
         }
 
         if (subState == "calibrating") {
@@ -531,6 +560,7 @@ void ADPNCS::parseStatus() {
         }
     } else {
         setIntegerParam(ADPNCS_PowerState, 0);
+        setIntegerParam(ADStatus, ADStatusIdle);
     }
 
     if (orthoState == "error") {
