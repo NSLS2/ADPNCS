@@ -7,6 +7,8 @@ PROD_NAME = pncsApp
 PROD_IOC += $(PROD_NAME)
 
 USR_CPPFLAGS += -std=c++23 -I$(PNCS_INCLUDE) -I$(GRPC_INCLUDE)
+
+# Use rpath to avoid setting LD_LIBRARY_PATH
 USR_LDFLAGS += -L$(PNCS_LIB) -L$(GRPC_LIB) -L$(GRPC_LIB64) -Wl,-rpath,$(PNCS_LIB) -Wl,-rpath,$(GRPC_LIB) -Wl,-rpath,$(GRPC_LIB64)
 
 DBD += $(PROD_NAME).dbd
