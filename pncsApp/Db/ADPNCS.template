@@ -1,29 +1,13 @@
-# Author:
-
-##################################################################
-# Define all of your PV records here in the following form:
+# ADPNCS.template
 #
-# record(RECORD_TYPE, "$(P)$(R)PVName"){
-#   field(DTYP, "data type")
-#   field(INP/OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PV_NAME")
-#   field(VAL, "value")
-#   field(SCAN, "I/O Intr")
-# }
-#
-# Consult other .template files for guides on how to write specific PVs
-#
-# The PV_NAME at the end of the INP or OUT field of the record is the
-# PVString defined in ADPNDetectorCXC.h.
-#
-# example: #define ADPNDetectorCXC "PV_NAME"
-#
-##################################################################
+# Author: Jakub Wlodek
+# Date: Sept 2025
 
 
 record(bo, "$(P)$(R)PowerState") {
     field(DESC, "Power State")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_POWER_STATE")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_POWER_STATE")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "0")
@@ -33,7 +17,7 @@ record(bo, "$(P)$(R)PowerState") {
 record(bi, "$(P)$(R)PowerState_RBV") {
     field(DESC, "Power State Readback")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_POWER_STATE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_POWER_STATE")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "0")
@@ -43,7 +27,7 @@ record(bi, "$(P)$(R)PowerState_RBV") {
 record(bo, "$(P)$(R)VoltageState") {
     field(DESC, "Voltage State")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_VOLTAGE_STATE")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_VOLTAGE_STATE")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "0")
@@ -53,7 +37,7 @@ record(bo, "$(P)$(R)VoltageState") {
 record(bi, "$(P)$(R)VoltageState_RBV") {
     field(DESC, "Voltage State Readback")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_VOLTAGE_STATE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_VOLTAGE_STATE")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "0")
@@ -63,7 +47,7 @@ record(bi, "$(P)$(R)VoltageState_RBV") {
 record(bo, "$(P)$(R)CoolDown") {
     field(DESC, "Cooling State")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_COOLING_STATE")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_COOLING_STATE")
     field(ZNAM, "Off")
     field(ONAM, "Cool")
     field(VAL, "0")
@@ -74,7 +58,7 @@ record(bo, "$(P)$(R)CoolDown") {
 record(bo, "$(P)$(R)WarmUp") {
     field(DESC, "Heating State")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_HEATING_STATE")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_HEATING_STATE")
     field(ZNAM, "Off")
     field(ONAM, "Warm")
     field(VAL, "0")
@@ -84,7 +68,7 @@ record(bo, "$(P)$(R)WarmUp") {
 record(bo, "$(P)$(R)BeamBlankState") {
     field(DESC, "Beam Blank State")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_BEAM_BLANK_STATE")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_BEAM_BLANK_STATE")
     field(ZNAM, "Unblanked")
     field(ONAM, "Blanked")
     field(VAL, "0")
@@ -94,7 +78,7 @@ record(bo, "$(P)$(R)BeamBlankState") {
 record(bo, "$(P)$(R)Calibrate"){
     field(DESC, "Calibrate")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_CALIBRATE")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_CALIBRATE")
     field(ZNAM, "Idle")
     field(ONAM, "Calibrate")
     field(VAL, "0")
@@ -104,7 +88,7 @@ record(bo, "$(P)$(R)Calibrate"){
 record(mbbi, "$(P)$(R)CameraMode_RBV"){
     field(DESC, "Camera Mode")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_CAMERA_MODE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_CAMERA_MODE")
     field(ZRST, "Spectroscopy")
     field(ONST, "Imaging")
     field(TWST, "Anti-Blooming")
@@ -118,7 +102,7 @@ record(mbbi, "$(P)$(R)CameraMode_RBV"){
 record(ao, "$(P)$(R)TemperatureSetpoint"){
     field(DESC, "Temperature Setpoint")
     field(DTYP, "asynFloat64")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_TEMPERATURE_SETPOINT")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMPERATURE_SETPOINT")
     field(EGU, "C")
     field(VAL, "0")
     field(PINI, "NO")
@@ -127,7 +111,7 @@ record(ao, "$(P)$(R)TemperatureSetpoint"){
 record(ai, "$(P)$(R)Temperature_RBV"){
     field(DESC, "Temp Readback")
     field(DTYP, "asynFloat64")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_TEMPERATURE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_TEMPERATURE")
     field(EGU, "C")
     field(VAL, "0")
     field(SCAN, "I/O Intr")
@@ -136,7 +120,7 @@ record(ai, "$(P)$(R)Temperature_RBV"){
 record(ai, "$(P)$(R)HeatsinkTemperature_RBV"){
     field(DESC, "Heatsink Temp Readback")
     field(DTYP, "asynFloat64")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_HEATSINK_TEMPERATURE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_HEATSINK_TEMPERATURE")
     field(EGU, "C")
     field(VAL, "0")
     field(SCAN, "I/O Intr")
@@ -145,7 +129,7 @@ record(ai, "$(P)$(R)HeatsinkTemperature_RBV"){
 record(bo, "$(P)$(R)CommonModeCorrection") {
     field(DESC, "Common Mode Correction")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_COMMON_MODE_CORRECTION")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_COMMON_MODE_CORRECTION")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "1")
@@ -155,7 +139,7 @@ record(bo, "$(P)$(R)CommonModeCorrection") {
 record(bi, "$(P)$(R)CommonModeCorrection_RBV") {
     field(DESC, "Common Mode Correction Readback")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_COMMON_MODE_CORRECTION")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_COMMON_MODE_CORRECTION")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(SCAN, "I/O Intr")
@@ -164,7 +148,7 @@ record(bi, "$(P)$(R)CommonModeCorrection_RBV") {
 record(bo, "$(P)$(R)DynamicCalibration"){
     field(DESC, "Dynamic Calibration")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_DYNAMIC_CALIBRATION")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_DYNAMIC_CALIBRATION")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "0")
@@ -174,7 +158,7 @@ record(bo, "$(P)$(R)DynamicCalibration"){
 record(bi, "$(P)$(R)DynamicCalibration_RBV"){
     field(DESC, "Dynamic Calibration Readback")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_DYNAMIC_CALIBRATION")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_DYNAMIC_CALIBRATION")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(SCAN, "I/O Intr")
@@ -183,7 +167,7 @@ record(bi, "$(P)$(R)DynamicCalibration_RBV"){
 record(ao, "$(P)$(R)PrimaryThreshold"){
     field(DESC, "Primary Threshold")
     field(DTYP, "asynFloat64")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_PRIMARY_THRESHOLD")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_PRIMARY_THRESHOLD")
     field(EGU, "keV")
     field(VAL, "0.0")
     field(PINI, "NO")
@@ -192,7 +176,7 @@ record(ao, "$(P)$(R)PrimaryThreshold"){
 record(ai, "$(P)$(R)PrimaryThreshold_RBV"){
     field(DESC, "Primary Threshold Readback")
     field(DTYP, "asynFloat64")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_PRIMARY_THRESHOLD")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_PRIMARY_THRESHOLD")
     field(EGU, "keV")
     field(VAL, "0.0")
     field(SCAN, "I/O Intr")
@@ -201,7 +185,7 @@ record(ai, "$(P)$(R)PrimaryThreshold_RBV"){
 record(ao, "$(P)$(R)SecondaryThreshold"){
     field(DESC, "Secondary Threshold")
     field(DTYP, "asynFloat64")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_SECONDARY_THRESHOLD")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_SECONDARY_THRESHOLD")
     field(EGU, "keV")
     field(VAL, "0.0")
     field(PINI, "NO")
@@ -211,7 +195,7 @@ record(ao, "$(P)$(R)SecondaryThreshold"){
 record(ai, "$(P)$(R)SecondaryThreshold_RBV"){
     field(DESC, "Secondary Threshold Readback")
     field(DTYP, "asynFloat64")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_SECONDARY_THRESHOLD")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_SECONDARY_THRESHOLD")
     field(EGU, "keV")
     field(VAL, "0.0")
     field(SCAN, "I/O Intr")
@@ -220,7 +204,7 @@ record(ai, "$(P)$(R)SecondaryThreshold_RBV"){
 record(bo, "$(P)$(R)LiveRunningCorrection"){
     field(DESC, "Live Running Correction")
     field(DTYP, "asynInt32")
-    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_LIVE_RUNNING_CORRECTION")
+    field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_LIVE_RUNNING_CORRECTION")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(VAL, "0")
@@ -230,7 +214,7 @@ record(bo, "$(P)$(R)LiveRunningCorrection"){
 record(bi, "$(P)$(R)LiveRunningCorrection_RBV"){
     field(DESC, "Live Running Correction Readback")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_LIVE_RUNNING_CORRECTION")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_LIVE_RUNNING_CORRECTION")
     field(ZNAM, "Off")
     field(ONAM, "On")
     field(SCAN, "I/O Intr")
@@ -239,7 +223,7 @@ record(bi, "$(P)$(R)LiveRunningCorrection_RBV"){
 # record(bo "$(P)$(R)GainSource"){
 #     field(DESC, "Gain Source")
 #     field(DTYP, "asynInt32")
-#     field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_GAIN_SOURCE")
+#     field(OUT, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_GAIN_SOURCE")
 #     field(ZNAM, "User")
 #     field(ONAM, "Factory")
 #     field(VAL, "0")
@@ -249,7 +233,7 @@ record(bi, "$(P)$(R)LiveRunningCorrection_RBV"){
 # record(bi, "$(P)$(R)GainSource_RBV"){
 #     field(DESC, "Gain Source Readback")
 #     field(DTYP, "asynInt32")
-#     field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_GAIN_SOURCE")
+#     field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_GAIN_SOURCE")
 #     field(ZNAM, "User")
 #     field(ONAM, "Factory")
 #     field(SCAN, "I/O Intr")
@@ -258,7 +242,7 @@ record(bi, "$(P)$(R)LiveRunningCorrection_RBV"){
 record(stringin, "$(P)$(R)State_RBV"){
     field(DESC, "State Readback")
     field(DTYP, "asynOctetRead")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_STATE")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_STATE")
     field(VAL, "Unknown")
     field(SCAN, "I/O Intr")
 }
@@ -266,7 +250,7 @@ record(stringin, "$(P)$(R)State_RBV"){
 record(ai, "$(P)$(R)ConnectionStatus_RBV"){
     field(DESC, "Connection Status Readback")
     field(DTYP, "asynInt32")
-    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))CXC_CONNECTION_STATUS")
+    field(INP, "@asyn($(PORT),$(ADDR),$(TIMEOUT))PNCS_CONNECTION_STATUS")
     field(VAL, "0")
     field(SCAN, "I/O Intr")
 }
